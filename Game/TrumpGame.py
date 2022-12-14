@@ -1,4 +1,5 @@
 from random import randint
+from random import choice
 import pygame
 
 WIDTH = 1200
@@ -11,18 +12,27 @@ walkLeft = [pygame.image.load('left_1.png'), pygame.image.load('left_2.png'), py
             pygame.image.load('left_4.png'), pygame.image.load('left_5.png'), pygame.image.load('left_6.png')]
 
 bg = pygame.image.load('bg.png')
+
+endgame = pygame.image.load('game_over.png')
+
 playerStand = pygame.image.load('idle.png')
+
+birdLeft = [pygame.image.load('bird_left_1.png'), pygame.image.load('bird_left_2.png')]
+
+birdRight = [pygame.image.load('bird_right_1.png'), pygame.image.load('bird_right_2.png')]
+
+moneybag = pygame.image.load('Money.png')
 
 
 class Trump:
-    def __init__(self, screen, x, y, animation_count):
+    def __init__(self, screen, x, y):
         self.screen = screen
         self.x = x
         self.y = y
         self.vx = 0
         self.vy = 0
         self.a = 1
-        self.animation_count = animation_count
+        self.animation_count = 0
         self.vector = 0
         self.is_jump = False
 
@@ -62,7 +72,7 @@ class Dollar:
         self.y += self.vy
 
     def draw(self):
-        pygame.draw.circle(self.screen, (0, 0, 255), (self.x, self.y), 6)
+        screen.blit(moneybag, (self.x, self.y))
 
     def hit(self, object):
         global money_counter, life_counter
@@ -77,12 +87,13 @@ class Dollar:
 
 
 class Bird:
-    def __init__(self, screen, x, y):
+    def __init__(self, screen):
         self.screen = screen
-        self.x = x
-        self.y = y
-        self.vx = 1
-        self.money_time = 0
+        self.x = randint(100, WIDTH-100)
+        self.y = 70
+        self.vx = choice([-1, 1])
+        self.money_time = randint(0, 225)
+        self.animation_count = randint(0, 30)
 
     def move(self):
         if (self.x + self.vx >= WIDTH) or (self.x + self.vx <= 0):
@@ -90,7 +101,15 @@ class Bird:
         self.x += self.vx
 
     def draw(self):
-        pygame.draw.rect(self.screen, (0, 0, 0), (self.x, self.y, 30, 30))
+        if self.animation_count + 1 >= 30:
+            self.animation_count = 0
+
+        if self.vx == -1:
+            screen.blit(birdLeft[self.animation_count // 15], (self.x, self.y))
+            self.animation_count += 1
+        elif self.vx == 1:
+            screen.blit(birdRight[self.animation_count // 15], (self.x, self.y))
+            self.animation_count += 1
 
     def create_dollar(self):
         global dollars
@@ -126,25 +145,51 @@ def mote_dollars():
             dollar.draw()
 
 
+def mote_birds():
+    global birds
+    for bird in birds:
+        bird.move()
+        bird.create_dollar()
+        bird.draw()
+
+
 def draw_counters(counter1, counter2):
-    fild = pygame.font.Font(None, 36)
-    text1 = fild.render("Money: " + str(counter1) + " $", True, (0, 255, 0))
-    text2 = fild.render("Lives: " + str(counter2), True, (255, 0, 0))
-    screen.blit(text1, (50, 50))
-    screen.blit(text2, (50, 80))
+    fild = pygame.font.SysFont('times new roman', 28)
+    text1 = fild.render("Money: " + str(counter1) + " $", True, (0, 175, 0))
+    text2 = fild.render("Lives: " + str(counter2), True, (240, 0, 0))
+    screen.blit(text1, (20, 10))
+    screen.blit(text2, (20, 40))
+
+
+def is_game_over(number_of_lives, number_of_money):
+    global birds, dollars
+    if number_of_lives <= 0:
+        birds.clear()
+        dollars.clear()
+        screen.blit(endgame, (0, 0))
+        fild = pygame.font.SysFont('times new roman', 36)
+        text1 = fild.render("You have just got " + str(number_of_money) + " $ of money. Congratulations !!!",
+                            True, (255, 255, 255))
+        screen.blit(text1, (270, 550))
 
 
 pygame.init()
+pygame.display.set_caption('Trump Game')
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-Player = Trump(screen, 50, HEIGHT - 75, 0)
-bird1 = Bird(screen, 30, 30)
+Player = Trump(screen, 50, HEIGHT - 75)
+number_of_birds = randint(1, 5)
 
+birds = []
 dollars = []
 
+for i in range(number_of_birds):
+    bird = Bird(screen)
+    birds.append(bird)
+
 money_counter = 0
-life_counter = 5
+life_counter = 2 * number_of_birds
 
 finished = False
 while not finished:
@@ -157,12 +202,11 @@ while not finished:
     keys = pygame.key.get_pressed()
     state(keys)
     Player.move()
-    bird1.move()
-    bird1.create_dollar()
     Player.draw()
-    bird1.draw()
+    mote_birds()
     mote_dollars()
     draw_counters(money_counter, life_counter)
+    is_game_over(life_counter, money_counter)
     pygame.display.update()
 
 pygame.quit()
