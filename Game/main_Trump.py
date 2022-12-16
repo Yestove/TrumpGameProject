@@ -1,6 +1,3 @@
-from random import randint
-from random import choice
-import pygame
 import lib
 
 pygame.init()
@@ -21,17 +18,7 @@ while not ch_finished:
 
 lib.number_of_birds = int(level)
 lib.life_counter = 2 * lib.number_of_birds
-        
-number_of_birds = lib.number_of_birds
-life_counter = lib.life_counter
-
-Player = lib.Player
-
-birds = lib.birds
-dollars = lib.dollars
-
-money_counter = lib.money_counter
-
+    
 for i in range(number_of_birds):
     bird = lib.Bird(screen)
     birds.append(bird)
